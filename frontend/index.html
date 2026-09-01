@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predictive Maintenance — CMAPSS</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+
+        <header>
+            <div class="header-left">
+                <div class="header-eyebrow">NASA CMAPSS · Turbofan Engine Health</div>
+                <h1>Predictive Maintenance System</h1>
+            </div>
+            <div class="header-right">
+                <span class="sys-badge">FD001 Dataset</span>
+             </div>
+        </header>
+
+        <nav class="tabs">
+            <button class="tab-btn active" data-tab="models">
+                <span class="tab-num">01</span>Model Comparison
+            </button>
+            <button class="tab-btn" data-tab="shap">
+                <span class="tab-num">02</span>Feature Importance
+            </button>
+            <button class="tab-btn" data-tab="simulation">
+                <span class="tab-num">03</span>Real-time Simulation
+            </button>
+            <button class="tab-btn" data-tab="fleet">
+                <span class="tab-num">04</span>Fleet Health
+            </button>
+        </nav>
+
+        <!-- ── Tab 1: Model Comparison ── -->
+        <div id="models-tab" class="tab-content active">
+            <div class="metrics-grid">
+                <div class="metric-card primary">
+                    <div class="metric-label">Best Model RMSE</div>
+                    <div class="metric-value" id="best-rmse">--</div>
+                    <div class="metric-sub" id="best-rmse-model">cycles</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Best R²</div>
+                    <div class="metric-value" id="best-r2">--</div>
+                    <div class="metric-sub">variance explained</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Total Features</div>
+                    <div class="metric-value" id="total-features">--</div>
+                    <div class="metric-sub">engineered</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-title">Model Performance </span>
+                </div>
+                <div class="section-body">
+                    <canvas id="radar-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-title">RMSE → MAE Slope Chart</span>
+                </div>
+                <div class="section-body">
+                    <canvas id="metrics-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <span class="section-title">Model Performance Details</span>
+                </div>
+                <table id="models-table">
+                    <thead>
+                        <tr>
+                            <th>Model</th>
+                            <th>RMSE </th>
+                            <th>MAE </th>
+                            <th>R² </th>
+                            <th>Train Time (s)</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ── Tab 2: SHAP ── -->
+        <div id="shap-tab" class="tab-content">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Top Feature</div>
+                    <div class="metric-value" id="top-feature" style="font-size:1.1rem;letter-spacing:-0.01em;margin-top:4px;">--</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Model</div>
+                    <div class="metric-value" style="font-size:1.1rem;margin-top:4px;">XGBoost</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Samples Analyzed</div>
+                    <div class="metric-value">200</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Features Ranked</div>
+                    <div class="metric-value" id="features-ranked">--</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-title">Top 10 Features by Mean |SHAP|</span>
+                </div>
+                <div class="section-body" style="padding:1rem 1.5rem;">
+                    <div class="shap-list" id="shap-rows"></div>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <h4>Why Rolling Features Dominate</h4>
+                <p>Rolling mean and standard deviation features capture temporal degradation patterns more effectively than raw sensor readings. They smooth out noise and highlight trends in engine health over time, making them critical for accurate RUL prediction.</p>
+            </div>
+
+            <div class="sensor-descriptions">
+                <div class="sensor-header">
+                    <span class="section-title">Key Sensor Descriptions</span>
+                </div>
+                <div id="sensor-list"></div>
+            </div>
+        </div>
+
+        <!-- ── Tab 3: Simulation ── -->
+        <div id="simulation-tab" class="tab-content">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Current Cycle</div>
+                    <div class="metric-value" id="current-cycle">--</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Predicted RUL</div>
+                    <div class="metric-value" id="predicted-rul">--</div>
+                    <div class="metric-sub">cycles remaining</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Actual RUL</div>
+                    <div class="metric-value" id="actual-rul">--</div>
+                    <div class="metric-sub">ground truth</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Alert Threshold</div>
+                    <div class="metric-value">30</div>
+                    <div class="metric-sub">cycles</div>
+                </div>
+            </div>
+
+            <div class="status-banner" id="status-banner">
+                <span class="status-dot"></span>
+                <span class="status-text">READY</span>
+                <span class="status-detail" id="status-detail">Press play to begin simulation</span>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-title">RUL Prediction Over Time</span>
+                    <div style="display:flex;gap:16px;align-items:center;">
+                        <span style="font-family:var(--mono);font-size:14px;color:var(--blue);display:flex;align-items:center;gap:5px;">
+                            <span style="display:inline-block;width:16px;height:2px;background:var(--blue);border-radius:1px;"></span>PREDICTED
+                        </span>
+                        <span style="font-family:var(--mono);font-size:14px;color:var(--text-2);display:flex;align-items:center;gap:5px;">
+                            <span style="display:inline-block;width:16px;height:2px;background:var(--text-2);border-radius:1px;"></span>ACTUAL
+                        </span>
+                        <span style="font-family:var(--mono);font-size:14px;color:var(--red);display:flex;align-items:center;gap:5px;opacity:0.7;">
+                            <span style="display:inline-block;width:16px;height:1px;background:var(--red);border-radius:1px;border-top:1px dashed var(--red);"></span>ALERT
+                        </span>
+                    </div>
+                </div>
+                <div class="section-body">
+                    <canvas id="simulation-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="controls">
+                <div class="control-row">
+                    <span class="control-label">Engine</span>
+                    <select id="engine-select"></select>
+                </div>
+                <div class="control-row">
+                    <span class="control-label">Playback</span>
+                    <div class="btn-group">
+                        <button id="prev-btn" class="control-btn" title="Previous Cycle">◀</button>
+                        <button id="play-btn" class="control-btn play-btn" title="Play">▶ Play</button>
+                        <button id="next-btn" class="control-btn" title="Next Cycle">▶</button>
+                    </div>
+                </div>
+                <div class="control-row">
+                    <span class="control-label">Scrub</span>
+                    <div class="slider-wrap">
+                        <input type="range" id="cycle-slider" min="0" max="100" value="0">
+                        <span id="cycle-progress">0%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Tab 4: Fleet ── -->
+        <div id="fleet-tab" class="tab-content">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Total Fleet</div>
+                    <div class="metric-value" id="total-fleet">--</div>
+                    <div class="metric-sub">engines monitored</div>
+                </div>
+                <div class="metric-card critical-card">
+                    <div class="metric-label">Critical <span style="font-size:12px;opacity:0.6;">RUL &lt; 30</span></div>
+                    <div class="metric-value" id="critical-count">--</div>
+                </div>
+                <div class="metric-card warning-card">
+                    <div class="metric-label">Warning <span style="font-size:12px;opacity:0.6;">30–60</span></div>
+                    <div class="metric-value" id="warning-count">--</div>
+                </div>
+                <div class="metric-card healthy-card">
+                    <div class="metric-label">Healthy <span style="font-size:12px;opacity:0.6;">RUL &gt; 60</span></div>
+                    <div class="metric-value" id="healthy-count">--</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-title">RUL Distribution</span>
+                </div>
+                <div class="section-body">
+                    <canvas id="rul-histogram"></canvas>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <span class="section-title">Predicted vs Actual RUL</span>
+                    <span style="font-family:var(--mono);font-size:9px;color:var(--text-2);">Dashed = perfect prediction</span>
+                </div>
+                <div class="section-body">
+                    <canvas id="scatter-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="fleet-controls">
+                <label for="sort-select">Sort by</label>
+                <select id="sort-select">
+                    <option value="id">Engine ID</option>
+                    <option value="rul-asc">RUL — Low to High</option>
+                    <option value="rul-desc">RUL — High to Low</option>
+                    <option value="risk">Risk Level</option>
+                </select>
+                <button id="fleet-toggle" class="fleet-toggle-btn">Compact View</button>
+            </div>
+
+            <div class="fleet-grid" id="fleet-grid"></div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+</html>
