@@ -18,7 +18,8 @@ print("Loading models and artifacts...")
 models = {
     'ridge': joblib.load('models/ridge.pkl'),
     'random_forest': joblib.load('models/random_forest.pkl'),
-    'xgboost': joblib.load('models/xgboost.pkl')
+    'xgboost': joblib.load('models/xgboost.pkl'),
+    'gradient_boosting': joblib.load('models/gradient_boosting.pkl')
 }
 scaler = joblib.load('models/scaler.pkl')
 feature_cols = joblib.load('models/feature_cols.pkl')
@@ -65,7 +66,12 @@ def get_recommendation(rul, risk_level):
 def preprocess_input(sensors, op_settings, cycle):
     """
     Preprocess single input for prediction.
-    Apply same transformations as training data.
+
+    NOTE: This is a simplified demo path. Rolling-statistic and lag features
+    require a window of prior cycles, which a single reading does not provide,
+    so those engineered features are zero-filled below. As a result, /predict
+    outputs are approximate. For accurate cycle-by-cycle predictions use the
+    /simulate endpoint, which relies on fully preprocessed test data.
     """
     # Fill missing sensors with nominal values
     for sensor, default_val in NOMINAL_SENSORS.items():
@@ -224,7 +230,7 @@ def get_shap():
     """Get SHAP feature importances."""
     return jsonify({
         'top_features': shap_results['top_features'][:15],
-        'model': 'xgboost',
+        'model': 'random_forest',
         'samples_analyzed': 200,
         'timestamp': datetime.now().isoformat()
     })

@@ -97,7 +97,6 @@ predictive-maintenance/
 ├── train_models.py            # Train all models
 ├── app.py                     # Flask API server
 ├── run_pipeline.py            # Automated pipeline runner
-├── check_setup.py             # Environment validation
 ├── requirements.txt
 └── README.md
 ```

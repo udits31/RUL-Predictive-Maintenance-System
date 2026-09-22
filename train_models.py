@@ -270,7 +270,7 @@ def train_lstm(X_train, y_train, X_test, y_test, train_df, test_df, feature_cols
     return model, metrics, y_pred
 
 def compute_shap_values(model, X_test, feature_cols):
-    """Compute SHAP values for XGBoost model."""
+    """Compute SHAP values for the Random Forest model."""
     print("\n" + "="*60)
     print("Computing SHAP Values")
     print("="*60)
