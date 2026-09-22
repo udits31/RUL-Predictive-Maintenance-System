@@ -266,7 +266,98 @@ def train_lstm(X_train, y_train, X_test, y_test, train_df, test_df, feature_cols
     
     model.save('models/lstm_model.keras')
     print(f"✓ Model saved to models/lstm_model.keras")
-    
+
+    return model, metrics, y_pred
+
+def train_cnn_lstm(X_train, y_train, X_test, y_test, train_df, test_df, feature_cols):
+
+    print("\n" + "="*60)
+    print("Training CNN-LSTM")
+    print("="*60)
+
+    # Set seeds for reproducibility
+    np.random.seed(42)
+    tf.random.set_seed(42)
+
+    seq_length = 30
+
+    # Reuse the same sequence builder as the plain LSTM
+    print(f"Creating sequences (length={seq_length})...")
+    train_engine_ids = train_df['engine_id'].values
+    test_engine_ids = test_df['engine_id'].values
+
+    X_train_seq, y_train_seq = create_sequences(X_train, y_train, train_engine_ids, seq_length)
+    X_test_seq, y_test_seq = create_sequences(X_test, y_test, test_engine_ids, seq_length)
+
+    print(f"  Train sequences: {X_train_seq.shape}")
+    print(f"  Test sequences: {X_test_seq.shape}")
+
+    # Build CNN-LSTM architecture
+    print("\nBuilding CNN-LSTM architecture...")
+    model = keras.Sequential([
+        # ── CNN front-end: local temporal feature extraction ──
+        layers.Conv1D(64, kernel_size=3, activation='relu', padding='same',
+                      input_shape=(seq_length, len(feature_cols))),
+        layers.BatchNormalization(),
+        layers.Conv1D(64, kernel_size=3, activation='relu', padding='same'),
+        layers.BatchNormalization(),
+        layers.MaxPooling1D(pool_size=2),
+        layers.Dropout(0.2),
+
+        # ── LSTM back-end: temporal trend modeling ──
+        layers.LSTM(64, return_sequences=True),
+        layers.Dropout(0.2),
+        layers.LSTM(32),
+        layers.Dropout(0.2),
+
+        # ── Regression head ──
+        layers.Dense(32, activation='relu'),
+        layers.Dense(1)
+    ])
+
+    model.compile(
+        optimizer=keras.optimizers.Adam(learning_rate=1e-3),
+        loss='mse',
+        metrics=['mae']
+    )
+
+    print(model.summary())
+
+    # Callbacks (same as the plain LSTM for a fair comparison)
+    early_stop = keras.callbacks.EarlyStopping(
+        monitor='val_loss',
+        patience=5,
+        restore_best_weights=True
+    )
+
+    reduce_lr = keras.callbacks.ReduceLROnPlateau(
+        monitor='val_loss',
+        factor=0.5,
+        patience=3,
+        min_lr=1e-6
+    )
+
+    # Train
+    print("\nTraining CNN-LSTM...")
+    start_time = time.time()
+    history = model.fit(
+        X_train_seq, y_train_seq,
+        validation_split=0.2,
+        epochs=50,
+        batch_size=64,
+        callbacks=[early_stop, reduce_lr],
+        verbose=1
+    )
+    train_time = time.time() - start_time
+
+    # Evaluate
+    y_pred = model.predict(X_test_seq, verbose=0).flatten()
+    metrics = evaluate_model(y_test_seq, y_pred, "CNN-LSTM")
+    metrics['train_time'] = train_time
+
+    model.save('models/cnn_lstm_model.keras')
+    print(f"✓ Model saved to models/cnn_lstm_model.keras")
+
     return model, metrics, y_pred
 
 def compute_shap_values(model, X_test, feature_cols):
@@ -357,7 +448,12 @@ def main():
     _, metrics, y_pred_lstm = train_lstm(X_train, y_train, X_test, y_test, train_df, test_df, feature_cols)
     results['lstm'] = metrics
     # Note: LSTM predictions are on sequences, not full test set
-    
+
+    # Train CNN-LSTM
+    _, metrics, y_pred_cnn_lstm = train_cnn_lstm(X_train, y_train, X_test, y_test, train_df, test_df, feature_cols)
+    results['cnn_lstm'] = metrics
+    # Note: CNN-LSTM predictions are on sequences, not full test set
+
     # Compute SHAP values using Random Forest model
     shap_results = compute_shap_values(rf_model, X_test, feature_cols)
     

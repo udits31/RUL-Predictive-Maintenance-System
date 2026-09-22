@@ -4,7 +4,7 @@ Full-stack predictive maintenance application using the NASA CMAPSS turbofan eng
 
 ## Features
 
-- **Complete ML Pipeline**: Ridge, Random Forest, XGBoost, and LSTM models
+- **Complete ML Pipeline**: Ridge, Random Forest, XGBoost, LSTM, and CNN-LSTM models
 - **Feature Engineering**: Rolling statistics, lag features, interaction terms, and degradation proxies
 - **SHAP Explainability**: Feature importance analysis using SHAP values
 - **REST API**: Flask backend with prediction, simulation, and fleet monitoring endpoints
@@ -28,7 +28,7 @@ python run_pipeline.py
 This executes all steps automatically:
 - Data generation (converts raw NASA data to CSV)
 - Preprocessing (feature engineering, scaling)
-- Model training (Ridge, RF, XGBoost, LSTM)
+- Model training (Ridge, RF, XGBoost, LSTM, CNN-LSTM)
 
 Total time: ~10-15 minutes depending on hardware.
 
@@ -121,7 +121,7 @@ The NASA CMAPSS FD001 dataset contains:
 
 - **Backend**: Python, Flask, scikit-learn, XGBoost, TensorFlow
 - **Frontend**: Vanilla JavaScript, Chart.js, HTML5, CSS3
-- **ML**: Ridge, Random Forest, XGBoost, LSTM
+- **ML**: Ridge, Random Forest, XGBoost, LSTM, CNN-LSTM
 - **Explainability**: SHAP
 - **Design**: IBM Plex Mono/Sans fonts, dark industrial theme
 

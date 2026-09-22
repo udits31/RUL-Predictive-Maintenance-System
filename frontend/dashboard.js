@@ -30,7 +30,7 @@ const T = {
     sans:   "'IBM Plex Sans', sans-serif",
 };
 
-const MODEL_COLORS = ['#2d7cf6', '#00b37e', '#d4820a', '#d94040', '#7c3aed', '#ff2d55'];
+const MODEL_COLORS = ['#2d7cf6', '#00b37e', '#d4820a', '#d94040', '#7c3aed', '#ff2d55', '#00c2d1'];
 
 // ── Chart.js defaults ────────────────────────────────────────────────────────
 Chart.defaults.color = T.text1;
